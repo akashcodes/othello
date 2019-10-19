@@ -64,57 +64,104 @@ int STATIC_HEURISTIC[8][8] = {
 const int MAX_DEPTH = 4;
 
 
-
-list<Move>::iterator MAX(list<Move> moves) {
-    list<Move>::iterator it, bestit;
-    int h = -1000;
-    int x, y;
-
-    //if(moves.size() < 1) cout<<"No moves left\n";
+Move* getMovesArray(list<Move> moves) {
+    list<Move>::iterator it;
     it = moves.begin();
-    bestit = it;
-
+    Move* moves_arr = (Move*) malloc(sizeof(Move)*moves.size());
+    int i = 0;
     for (; it != moves.end(); it++) {
-        x = it->x;
-        y = it->y;
-        //cout<<x<<"  "<<y<<"\n";
+        moves_arr[i++] = *it;
+    }
+
+    return moves_arr;
+}
+
+
+
+Move* MAX(Move* moves, int n) {
+    Move* move = (Move*) malloc(sizeof(Move));
+    int h = -1000, x, y;
+    for(int i = 0; i < n; i++) {
+        x = moves[i].x;
+        y = moves[i].y;
         if(STATIC_HEURISTIC[x][y] > h) {
             h = STATIC_HEURISTIC[x][y];
-            *bestit = *it;
+            *move = moves[i];
         }
     }
-    //cout<<b<<" plays move => "<<bestit->x<<" "<<bestit->y<<"\n";
 
-    return bestit;
+    move;
 }
 
 
-list<Move>::iterator MIN(list<Move> moves) {
-    list<Move>::iterator it, bestit;
-    int h = 1000;
-    int x, y;
-
-    //if(moves.size() < 1) cout<<"No moves left\n";
-    it = moves.begin();
-    bestit = it;
-
-    for (; it != moves.end(); it++) {
-        x = it->x;
-        y = it->y;
-        //cout<<x<<"  "<<y<<"\n";
+Move* MIN(Move* moves, int n) {
+    Move* move = (Move*) malloc(sizeof(Move));
+    int h = 1000, x, y;
+    for(int i = 0; i < n; i++) {
+        x = moves[i].x;
+        y = moves[i].y;
         if(STATIC_HEURISTIC[x][y] < h) {
             h = STATIC_HEURISTIC[x][y];
-            *bestit = *it;
+            *move = moves[i];
         }
     }
-    //cout<<b<<" plays move => "<<bestit->x<<" "<<bestit->y<<"\n";
 
-    return bestit;
+    move;
 }
 
 
 
-Move MiniMax(const OthelloBoard& board, int depth, Turn turn) {
+Move* MiniMax(const OthelloBoard& board, int player, int depth, Turn turn, Move move) {
+
+    // player 0 = MAX
+    // player 1 = MIN
+
+    OthelloBoard cboard;
+    cboard =  board;
+    list<Move> moves_list = cboard.getValidMoves( turn );
+    int n = moves_list.size();
+    Move* moves = getMovesArray(moves_list);
+    Move* moves1 = getMovesArray(moves_list);
+
+    Turn next_turn;
+    if(turn == BLACK)
+        next_turn = RED;
+    else if (turn == RED) {
+        next_turn = BLACK;
+    }
+
+
+    int next_player;
+    if(player == 0)
+        next_player = 1;
+    else if (player == 1)
+        next_player = 0;
+    
+
+
+    if(depth < MAX_DEPTH) {
+
+        if(player == 0) {
+            for(int i = 0; i < n; i++) {
+                moves1[i] = MiniMax(OthelloBoard, )
+            }
+        }
+
+    } else {
+        if(player == 0) return MAX(moves, n);
+        else return MIN(moves, n);
+    }
+
+
+}
+
+
+void MiniMaxCaller(const OthelloBoard& board, int player, int depth, Turn turn) {
+
+
+    // player 0 = MAX
+    // player 1 = MIN
+
     OthelloBoard cboard;
     cboard =  board;
     Turn next_turn;
@@ -124,17 +171,25 @@ Move MiniMax(const OthelloBoard& board, int depth, Turn turn) {
         next_turn = BLACK;
     }
 
+
+    int next_player;
+    if(player == 0)
+        next_player = 1;
+    else if (player == 1)
+        next_player = 0;
+    
+
     list<Move> moves = cboard.getValidMoves( turn );
 
     list<Move> node_moves;
 
-    if(depth == MAX_DEPTH) {
-
-        return 
-
+    list<Move>::iterator it;
+    it = moves.begin();
+    for (; it != moves.end(); it++) {
+        
     }
 
-    return 
+
 }
 
 
