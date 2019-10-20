@@ -19,8 +19,6 @@ using namespace Desdemona;
 // Store the board here
 OthelloBoard gboard;
 
-clock_t start,finish;
-
 #define INF 1e18
 
 // GLOBAL var to represent player's bot
@@ -79,29 +77,26 @@ double STATIC_HEURISTIC[8][8] = {
 };
 
 
-float HEURISTIC_WEIGHTS[7] = {
+float HEURISTIC_WEIGHTS[6] = {
     11,  // Parity
     850.724,  // Corner
     382.026, // Closeness
     86.922, // mobility
     78.396,  // frontier
-    10,   // static
-    10 //stability
+    1000   // static
 };
-
-const int N_HEURS = 7;
 
 
 double computeWeightage(double values[]) {
     double weight = 0;
-    for(int i = 0; i < N_HEURS; i++) 
+    for(int i = 0; i < 6; i++) 
         weight += values[i]*HEURISTIC_WEIGHTS[i];
-   return weight;
+    return weight;
 }
 
 
 
-double coinParity(OthelloBoard board) {
+double coinParity(OthelloBoard board, Turn turn) {
     // 1 -> Black
     // 2 -> Red
     int mycoins, oppcoins;
@@ -147,11 +142,11 @@ double frontier(OthelloBoard board) {
 }
 
 
-double statich(OthelloBoard board) {
+double statich(OthelloBoard board, Turn turn, Move move) {
     double stat=0;
     for(int i = 0; i < 8; i++) {
         for(int j = 0; j < 8; j++) {
-            if(board.get(i, j) == ME) {
+            if(board.get(i, j) == turn) {
                 stat += STATIC_HEURISTIC[i][j];
             }
         }
@@ -161,43 +156,20 @@ double statich(OthelloBoard board) {
 }
 
 
-double countCorners(OthelloBoard board) {
-    int mycorners = 0, oppcorners = 0;
-    int x, y;
-    for(int i = 0; i < 4; i++) {
-        x = CORNERS[i][0];
-        y = CORNERS[i][1];
-        if(board.get(x, y) == ME) {
-            mycorners += 1;
-        } else if(board.get(x , y) == other(ME)) {
-            oppcorners += 1;
-        }
-    }
-    return 100*(mycorners - oppcorners);
-}
 
-
-
-double evaluationFunction(OthelloBoard board) {
-    //board.makeMove(turn, move);
+double evaluationFunction(OthelloBoard board, Turn turn, Move move) {
+    board.makeMove(turn, move);
 
     // parity
-    double parity = coinParity(board);
-    
-    double corner = countCorners(board);
-    
+    double parity = coinParity(board, turn);
+    double corner = 0;
     double close = 0;
-    
-    double mob = 0;
-    
-    double front = frontier(board);
-    
-    double stat = statich(board);
-
-    double stability = 0;
+    double mob = 0;//mobility(board, turn);
+    double front = frontier(board);//mobility(board, turn);
+    double stat = STATIC_HEURISTIC[move.x][move.y];
     
 
-    double vals[7] = {parity, corner, close, mob, front, stat, stability};
+    double vals[6] = {parity, corner, close, mob, front, stat};
     return computeWeightage(vals);
 }
 
@@ -215,46 +187,41 @@ const int MAX_LEVEL = 6;
 
 double AlphaBeta(OthelloBoard board, Move move, Turn turn, short level, double alpha, double beta) {
 
-    //finish = clock();
-    //if(((double)(finish-start)/CLOCKS_PER_SEC)>1.95) {
-    //    if(level&1) return -INF;
-    //    return INF;
-    //}
-	if(level == 6) {
-		return evaluationFunction(board);
+
+    if(level == MAX_LEVEL) {
+       return evaluationFunction(board, turn, move);
 	}
-	
-    board.makeMove(turn, move);
-	
-    turn = other(turn);
+
+
+    board.makeMove(turn,move);
+	turn = other(turn);
 	
     list<Move> newMoves = board.getValidMoves(turn);
-	
-    list<Move>::iterator iter = newMoves.begin();
+	list<Move>::iterator iter = newMoves.begin();
 	
     double ret = -INF;
-	
-    if(level&1) ret *= -1;
-	
+    
+    if(ME == turn) ret *= -1;
+    
     if(!(newMoves.size())) return ret;
-	
-    for(;iter!=newMoves.end();iter++) {
+
+    OthelloBoard cboard;
+
+	for(;iter!=newMoves.end();iter++) {
+		cboard = board;
+        double curr = AlphaBeta(cboard,*iter,turn,level+1,alpha,beta);
 		
-        double curr = AlphaBeta(board,*iter,turn,level+1,alpha,beta);
-		
-        if(level&1) {
-			ret = min(ret,curr);
-			beta = min(beta,ret);
+        if(ME == turn) {
+            ret = max(ret,curr);
+			alpha = max(alpha,ret);	
 		}
-		
-        else {
-			ret = max(ret,curr);
-			alpha = max(alpha,ret);		
+		else {
+			ret = min(ret,curr);
+			beta = min(beta,ret);	
 		}
 		
         if(beta<=alpha) break;
 	}
-
 	return ret; 
 }
 
@@ -291,12 +258,8 @@ MyBot::MyBot( Turn turn ) : OthelloPlayer( turn ) {
 Move MyBot::play( const OthelloBoard& board ) {
 
     // get a list of valid moves the bot can take
-    start = clock();
 
-    //gboard = board;
-    usleep(500000);
-    printf("\033c");
-    board.print();
+    gboard = board;
 
     list<Move> moves = board.getValidMoves( turn );
 

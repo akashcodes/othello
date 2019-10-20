@@ -69,3 +69,9 @@ playrandom:
 
 playbest:
 	./bin/Desdemona ./bots/MyBot/bot.so ./bots/BestBot/bot.so
+
+testbest:
+	./bin/Desdemona ./bots/BestBot/bot.so ./bots/RandomBot/RandomBot.so
+
+testbot:
+	./bin/Desdemona ./bots/BestBot/bot.so ./bots/MyBot/bot.so

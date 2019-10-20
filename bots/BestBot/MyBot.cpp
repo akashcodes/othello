@@ -184,11 +184,11 @@ double othelloBoardEvaluator(char grid[8][8])  {
 }
 
 double testMyMove(OthelloBoard board, Move move, Turn turn, short level, double alpha, double beta) {
-    finish = clock();
-    if(((double)(finish-start)/CLOCKS_PER_SEC)>1.95) {
-        if(level&1) return -INF;
-        return INF;
-    }
+    //finish = clock();
+    //if(((double)(finish-start)/CLOCKS_PER_SEC)>1.95) {
+    //    if(level&1) return -INF;
+    //    return INF;
+    //}
 	if(level == 6) {
 		char grid[8][8];
 		for(int i=0;i<8;i++) {
