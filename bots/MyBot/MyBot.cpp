@@ -19,6 +19,8 @@ using namespace Desdemona;
 // Store the board here
 OthelloBoard gboard;
 
+#define INF 1e18
+
 
 /**
  * Using STATIC HEURISTIC for evaluation of a move
@@ -52,6 +54,29 @@ int STATIC_HEURISTIC[8][8] = {
 };
 
 
+double coinParity(OthelloBoard board, Turn turn) {
+    // 1 -> Black
+    // 2 -> Red
+    int mycoins, oppcoins;
+    if(turn == 1) { 
+        mycoins = board.getBlackCount();
+        oppcoins = board.getRedCount();
+    } else {
+        mycoins = board.getRedCount();
+        oppcoins = board.getBlackCount();
+    }
+    return 100*(mycoins-oppcoins)/(mycoins+oppcoins);
+}
+
+
+
+double evaluationFunction(OthelloBoard board, Turn turn, Move move) {
+    double sval = STATIC_HEURISTIC[move.x][move.y];
+    double cpar = coinParity(board, turn);
+    return sval+cpar;
+}
+
+
 
 /**
  * TODO :
@@ -61,135 +86,37 @@ int STATIC_HEURISTIC[8][8] = {
  */
 
 
-const int MAX_DEPTH = 4;
+const int MAX_LEVEL = 6;
 
 
-Move* getMovesArray(list<Move> moves) {
-    list<Move>::iterator it;
-    it = moves.begin();
-    Move* moves_arr = (Move*) malloc(sizeof(Move)*moves.size());
-    int i = 0;
-    for (; it != moves.end(); it++) {
-        moves_arr[i++] = *it;
-    }
-
-    return moves_arr;
-}
+double AlphaBeta(OthelloBoard board, Move move, Turn turn, short level, double alpha, double beta) {
 
 
-
-Move* MAX(Move* moves, int n) {
-    Move* move = (Move*) malloc(sizeof(Move));
-    int h = -1000, x, y;
-    for(int i = 0; i < n; i++) {
-        x = moves[i].x;
-        y = moves[i].y;
-        if(STATIC_HEURISTIC[x][y] > h) {
-            h = STATIC_HEURISTIC[x][y];
-            *move = moves[i];
-        }
-    }
-
-    move;
-}
+    if(level == MAX_LEVEL) {
+		return evaluationFunction(board, turn, move);
+	}
 
 
-Move* MIN(Move* moves, int n) {
-    Move* move = (Move*) malloc(sizeof(Move));
-    int h = 1000, x, y;
-    for(int i = 0; i < n; i++) {
-        x = moves[i].x;
-        y = moves[i].y;
-        if(STATIC_HEURISTIC[x][y] < h) {
-            h = STATIC_HEURISTIC[x][y];
-            *move = moves[i];
-        }
-    }
-
-    move;
-}
-
-
-
-Move* MiniMax(const OthelloBoard& board, int player, int depth, Turn turn, Move move) {
-
-    // player 0 = MAX
-    // player 1 = MIN
-
-    OthelloBoard cboard;
-    cboard =  board;
-    list<Move> moves_list = cboard.getValidMoves( turn );
-    int n = moves_list.size();
-    Move* moves = getMovesArray(moves_list);
-    Move* moves1 = getMovesArray(moves_list);
-
-    Turn next_turn;
-    if(turn == BLACK)
-        next_turn = RED;
-    else if (turn == RED) {
-        next_turn = BLACK;
-    }
-
-
-    int next_player;
-    if(player == 0)
-        next_player = 1;
-    else if (player == 1)
-        next_player = 0;
-    
-
-
-    if(depth < MAX_DEPTH) {
-
-        if(player == 0) {
-            for(int i = 0; i < n; i++) {
-                moves1[i] = MiniMax(OthelloBoard, )
-            }
-        }
-
-    } else {
-        if(player == 0) return MAX(moves, n);
-        else return MIN(moves, n);
-    }
-
-
-}
-
-
-void MiniMaxCaller(const OthelloBoard& board, int player, int depth, Turn turn) {
-
-
-    // player 0 = MAX
-    // player 1 = MIN
-
-    OthelloBoard cboard;
-    cboard =  board;
-    Turn next_turn;
-    if(turn == BLACK)
-        next_turn = RED;
-    else if (turn == RED) {
-        next_turn = BLACK;
-    }
-
-
-    int next_player;
-    if(player == 0)
-        next_player = 1;
-    else if (player == 1)
-        next_player = 0;
-    
-
-    list<Move> moves = cboard.getValidMoves( turn );
-
-    list<Move> node_moves;
-
-    list<Move>::iterator it;
-    it = moves.begin();
-    for (; it != moves.end(); it++) {
-        
-    }
-
-
+    board.makeMove(turn,move);
+	turn = other(turn);
+	list<Move> newMoves = board.getValidMoves(turn);
+	list<Move>::iterator iter = newMoves.begin();
+	double ret = -INF;
+    if(level&1) ret *= -1;
+    if(!(newMoves.size())) return ret;
+	for(;iter!=newMoves.end();iter++) {
+		double curr = AlphaBeta(board,*iter,turn,level+1,alpha,beta);
+		if(level&1) {
+			ret = min(ret,curr);
+			beta = min(beta,ret);
+		}
+		else {
+			ret = max(ret,curr);
+			alpha = max(alpha,ret);		
+		}
+		if(beta<=alpha) break;
+	}
+	return ret; 
 }
 
 
@@ -202,7 +129,7 @@ class MyBot: public OthelloPlayer {
          * spawning a background processing thread. 
          */
         // constructor
-        int b = rand()%7;
+        //int b = rand()%7;
         MyBot( Turn turn );
 
         /**
@@ -227,38 +154,28 @@ Move MyBot::play( const OthelloBoard& board ) {
     // get a list of valid moves the bot can take
 
     gboard = board;
-    usleep(1000000);
-    printf("\033c");
-    cout<<"It's this guy's turn = > "<<turn<<"\n";
-    gboard.print();
+    //usleep(1000000);
+    //printf("\033c");
+    //cout<<"It's this guy's turn = > "<<turn<<"\n";
+    //gboard.print();
 
     list<Move> moves = board.getValidMoves( turn );
 
-    //cout<<"Piece 1 = > "<<board.get(3, 3)<<"\n";
-    //cout<<"Piece 2 = > "<<board.get(3, 4)<<"\n";
-
-    //int randNo = rand() % moves.size();
-    
-    list<Move>::iterator it, bestit;
-    int h = -120;
-    int x, y;
-
-    //if(moves.size() < 1) cout<<"No moves left\n";
-    it = moves.begin();
-    bestit = it;
-
-    for (; it != moves.end(); it++) {
-        x = it->x;
-        y = it->y;
-        //cout<<x<<"  "<<y<<"\n";
-        if(STATIC_HEURISTIC[x][y] > h) {
-            h = STATIC_HEURISTIC[x][y];
-            *bestit = *it;
-        }
+    list<Move>::iterator it = moves.begin();
+    Move bestMove((*it).x,(*it).y);
+    double retVal = -INF;
+    double MAX = INF, MIN = -INF;
+    OthelloBoard copyBoard = board;
+    short level = 1;
+    for(;it!=moves.end();it++) {
+    	double currValue = AlphaBeta(copyBoard,*it,turn,level,MIN,MAX);
+    	if(currValue > retVal) {
+    		retVal = currValue;
+    		bestMove = *it;
+    	}
+    	copyBoard = board;
     }
-    //cout<<b<<" plays move => "<<bestit->x<<" "<<bestit->y<<"\n";
-
-    return *bestit;
+    return bestMove;
 }
 
 
